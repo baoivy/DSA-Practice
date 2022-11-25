@@ -19,8 +19,9 @@ protected:
     void inOrdertoString(BSTNode* root, string& ) const;
     BSTNode* inOrderReverse(BSTNode* root) const;
     BSTNode* preOrderSubString(BSTNode* root, int from, int to) const;
-    void clear(BSTNode* root);
-    int keyGenerator() const;
+    void updateLeftL(BSTNode* root) const;
+    void clearParents(BSTNode* root);
+    bool checkLeaf(BSTNode* root);
 
 public:
     ConcatStringTree(const char* s);
@@ -50,12 +51,15 @@ public:
         int count;
         //Implementation for AVL Tree
         int height(AVLNode* node);
+        int getBalance(AVLNode* node);
         AVLNode* rightRotate(AVLNode* node);
         AVLNode* leftRotate(AVLNode* node);
-        void balance(AVLNode* node);
+        AVLNode* maxValue(AVLNode* node);
         void PreOrderTraversal(AVLNode* root, string&) const;
         void clear(AVLNode* root);
-        void updateHeight(AVLNode* node);
+        AVLNode* insert(AVLNode* root, ConcatStringTree::BSTNode* node);
+        AVLNode* remove(AVLNode* root, ConcatStringTree::BSTNode* node, bool &canDelete);
+        void setNULLRecur(AVLNode* root, ConcatStringTree::BSTNode* node);
 
     public:
         ParentsTree() {
@@ -65,7 +69,8 @@ public:
         int size() const;
         string toStringPreOrder() const;
         void insertNode(ConcatStringTree::BSTNode* node);
-        void deleteNode(int key);
+        void deleteNode(ConcatStringTree::BSTNode* node);
+        void setNULL(ConcatStringTree::BSTNode* node);
         ~ParentsTree();
 
         class AVLNode {
@@ -74,7 +79,6 @@ public:
             int key; //Left length string
             AVLNode* left;
             AVLNode* right;
-            AVLNode* parent;
             int height;
             friend class ParentsTree;
 
@@ -82,8 +86,7 @@ public:
             AVLNode(ConcatStringTree::BSTNode* node) {
                 this->node = node;
                 this->key = node->key;
-                this->height = 0;
-                this->parent = nullptr;
+                this->height = 1;
                 this->left = nullptr;
                 this->right = nullptr;
             }
@@ -96,6 +99,8 @@ public:
         string data;
         int leftLength; //Left length string
         int lengthStr;
+        int numRef;
+        bool RCST;
         BSTNode* left;
         BSTNode* right;
         ParentsTree *parent_node;
@@ -109,15 +114,23 @@ public:
             this->left = nullptr;
             this->right = nullptr;
             this->parent_node = new ParentsTree();
+            this->numRef = 0;
+            this->RCST = false;
         }
         BSTNode(string data, int leftLength) {
             this->leftLength = leftLength;
-            this->key = key;
+            this->key = 0;
             this->left = nullptr;
             this->right = nullptr;
-            this->lengthStr = data.length();
+            this->lengthStr = (int)data.length();
             this->parent_node = new ParentsTree();
+            this->RCST = false;
             this->data = data;
+            this->numRef = 0;
+        }
+        ~BSTNode() {
+            delete this->parent_node;
+            this->parent_node = nullptr;
         }
     };
 };
@@ -135,7 +148,7 @@ private:
     friend class LitStringHash;
 
 public:
-    HashConfig(){}
+    HashConfig() {}
     HashConfig(int p, double c1, double c2, double lambda, double alpha, int initSize) {
         this->p = p;
         this->c1 = c1;
@@ -155,7 +168,6 @@ private:
     int capacity;
     int idx_last;
 
-    int power(int p, int i);
     int hashFunc(string s, int, int);
     void reHash();
     ConcatStringTree::BSTNode* insertHash(string s);
@@ -174,13 +186,11 @@ private:
     class HashItem {
     private:
         ConcatStringTree::BSTNode* node;
-        int numRef;
         bool isEmpty;
         friend class LitStringHash;
     public:
         HashItem() {
             this->node = nullptr;
-            this->numRef = 1;
             this->isEmpty = true;
         }
     };
@@ -192,9 +202,10 @@ private:
     BSTNode* preOrderSubString(BSTNode* root, int from, int to) const;
 public:
     LitStringHash* litStringHash;
-    ReducedConcatStringTree(BSTNode* root, int size) {
+    ReducedConcatStringTree(BSTNode* root, int size, LitStringHash*& litStringHash) {
         this->root = root;
         this->size = size;
+        this->litStringHash = litStringHash;
     }
     ReducedConcatStringTree(const char* s, LitStringHash*& litStringHash);
     ReducedConcatStringTree concat(ReducedConcatStringTree& otherS);
